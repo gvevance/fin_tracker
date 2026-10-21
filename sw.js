@@ -1,14 +1,14 @@
-const CACHE_NAME = "financial-tracker-v1";
+const CACHE_NAME = "financial-tracker-v2";
 
 const PRECACHE_URLS = [
-  "/",
-  "/index.html",
-  "/css/styles.css",
-  "/js/main.js",
-  "/manifest.json",
-  "/icons/icon.svg",
-  "/icons/icon-192.svg",
-  "/icons/icon-512.svg",
+  "./",
+  "index.html",
+  "css/styles.css",
+  "js/main.js",
+  "manifest.json",
+  "icons/icon.svg",
+  "icons/icon-192.svg",
+  "icons/icon-512.svg",
 ];
 
 self.addEventListener("install", (event) => {
