@@ -2,18 +2,28 @@ import { requireAuth } from "../auth-guard.js";
 import { getExpensesForMonth, formatMoney } from "../expenses.js";
 import { Timestamp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-const user = await requireAuth();
-if (!user) return;
-
-const form = document.getElementById("month-form");
+const monthInput =
+  document.getElementById("month-picker") ||
+  document.querySelector('input[name="month"]');
 const listEl = document.getElementById("expense-list");
-const totalEl = document.getElementById("month-total");
 const errorEl = document.getElementById("list-error");
 const emptyEl = document.getElementById("list-empty");
+const summaryTitle = document.getElementById("summary-title");
+const summaryTotal = document.getElementById("summary-total");
+const summaryMeta = document.getElementById("summary-meta");
+const summaryCategories = document.getElementById("summary-categories");
 
-const monthInput = form.querySelector('[name="month"]');
-const now = new Date();
-monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+function showError(message) {
+  if (errorEl) {
+    errorEl.textContent = message;
+    errorEl.classList.remove("hidden");
+  }
+}
+
+function currentMonthValue() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
 
 function spentAtToDate(spentAt) {
   if (spentAt instanceof Timestamp) {
@@ -22,28 +32,81 @@ function spentAtToDate(spentAt) {
   return new Date(spentAt);
 }
 
-async function loadMonth() {
-  errorEl.classList.add("hidden");
-  listEl.innerHTML = "";
-  emptyEl.classList.add("hidden");
-  totalEl.textContent = "";
+function monthLabel(year, month) {
+  return new Date(year, month - 1, 1).toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function renderSummary(year, month, expenses) {
+  const label = monthLabel(year, month);
+  let total = 0;
+  let currency = "INR";
+  const byCategory = new Map();
+
+  for (const expense of expenses) {
+    total += expense.amount;
+    currency = expense.currency || currency;
+    const cat = expense.category || "Other";
+    byCategory.set(cat, (byCategory.get(cat) || 0) + expense.amount);
+  }
+
+  if (summaryTitle) summaryTitle.textContent = label;
+  if (summaryTotal) summaryTotal.textContent = formatMoney(total, currency);
+  if (summaryMeta) {
+    summaryMeta.textContent = `${expenses.length} expense${expenses.length === 1 ? "" : "s"}`;
+  }
+
+  if (summaryCategories) {
+    summaryCategories.innerHTML = "";
+    const sorted = [...byCategory.entries()].sort((a, b) => b[1] - a[1]);
+    for (const [category, amount] of sorted) {
+      const li = document.createElement("li");
+      li.className = "summary-categories__item";
+      li.innerHTML = `<span>${escapeHtml(category)}</span><span>${formatMoney(amount, currency)}</span>`;
+      summaryCategories.appendChild(li);
+    }
+  }
+}
+
+async function loadMonth(user) {
+  if (errorEl) errorEl.classList.add("hidden");
+  if (emptyEl) emptyEl.classList.add("hidden");
+  if (listEl) listEl.innerHTML = "";
+  if (summaryMeta) summaryMeta.textContent = "Loading summary…";
+
+  if (!monthInput) {
+    showError("Month picker is missing on this page.");
+    return;
+  }
+
+  if (!monthInput.value) {
+    monthInput.value = currentMonthValue();
+  }
 
   const [year, month] = monthInput.value.split("-").map(Number);
-  if (!year || !month) return;
+  if (!year || !month) {
+    showError("Choose a valid month.");
+    return;
+  }
 
   try {
     const expenses = await getExpensesForMonth(user.uid, year, month);
-    let total = 0;
-    let currency = "INR";
+    renderSummary(year, month, expenses);
 
     if (expenses.length === 0) {
-      emptyEl.classList.remove("hidden");
+      if (emptyEl) emptyEl.classList.remove("hidden");
       return;
     }
 
     for (const expense of expenses) {
-      total += expense.amount;
-      currency = expense.currency || currency;
       const li = document.createElement("li");
       const date = spentAtToDate(expense.spentAt);
       li.className = "expense-item";
@@ -57,29 +120,48 @@ async function loadMonth() {
           ${expense.note ? `<span>${escapeHtml(expense.note)}</span>` : ""}
         </div>
       `;
-      listEl.appendChild(li);
+      listEl?.appendChild(li);
     }
-
-    totalEl.textContent = `Total: ${formatMoney(total, currency)}`;
   } catch (err) {
+    console.error(err);
+    if (summaryTotal) summaryTotal.textContent = "—";
+    if (summaryMeta) summaryMeta.textContent = "";
     if (!navigator.onLine) {
-      errorEl.textContent = "You are offline. Connect to load expenses.";
+      showError("You are offline. Connect to load expenses.");
     } else {
-      errorEl.textContent = err.message || "Could not load expenses.";
+      showError(err.message || "Could not load expenses.");
     }
-    errorEl.classList.remove("hidden");
   }
 }
 
-function escapeHtml(text) {
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
+async function init() {
+  if (!monthInput) {
+    showError("This page failed to load. Hard refresh or clear site cache.");
+    return;
+  }
+
+  if (!monthInput.value) {
+    monthInput.value = currentMonthValue();
+  }
+
+  let user;
+  try {
+    if (summaryMeta) summaryMeta.textContent = "Checking sign-in…";
+    user = await requireAuth();
+  } catch (err) {
+    console.error(err);
+    showError(err.message || "Sign-in check failed.");
+    if (summaryMeta) summaryMeta.textContent = "";
+    return;
+  }
+
+  if (!user) return;
+
+  await loadMonth(user);
+
+  monthInput.addEventListener("change", () => {
+    loadMonth(user);
+  });
 }
 
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  loadMonth();
-});
-
-loadMonth();
+init();

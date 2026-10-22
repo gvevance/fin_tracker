@@ -15,6 +15,25 @@ function getReturnPath() {
   return "index.html";
 }
 
+function formatAuthError(err) {
+  const code = err?.code || "";
+  switch (code) {
+    case "auth/email-already-in-use":
+      return "That username is already taken.";
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+      return "Invalid username or password.";
+    case "auth/weak-password":
+      return "Password must be at least 6 characters.";
+    case "auth/api-key-not-valid":
+    case "auth/invalid-api-key":
+      return "Invalid Firebase API key. Update js/firebase-config.js from Firebase Console → Project settings → Your web app.";
+    default:
+      return err.message || "Authentication failed.";
+  }
+}
+
 function showError(message) {
   errorEl.textContent = message;
   errorEl.classList.remove("hidden");
@@ -41,20 +60,20 @@ async function handleAuth(promise) {
     await promise;
     window.location.replace(getReturnPath());
   } catch (err) {
-    showError(err.message || "Authentication failed.");
+    showError(formatAuthError(err));
   }
 }
 
 signinForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const data = new FormData(signinForm);
-  handleAuth(signIn(data.get("email"), data.get("password")));
+  handleAuth(signIn(data.get("username"), data.get("password")));
 });
 
 signupForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const data = new FormData(signupForm);
-  handleAuth(signUp(data.get("email"), data.get("password")));
+  handleAuth(signUp(data.get("username"), data.get("password")));
 });
 
 if (!isFirebaseConfigured(firebaseConfig)) {

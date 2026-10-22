@@ -3,7 +3,7 @@
  * Project settings → Your apps → Web app → firebaseConfig
  *
  * Console setup (one-time):
- * 1. Enable Authentication → Email/Password
+ * 1. Enable Authentication → Email/Password (app signs in with username via internal email)
  * 2. Create Firestore database
  * 3. Publish rules from ../firebase/firestore.rules
  * 4. Authentication → Settings → Authorized domains → add gvevance.github.io

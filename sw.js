@@ -1,4 +1,4 @@
-const CACHE_NAME = "financial-tracker-v5";
+const CACHE_NAME = "financial-tracker-v9";
 
 const PRECACHE_URLS = [
   "./",

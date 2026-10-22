@@ -3,10 +3,10 @@ export function isFirebaseConfigured(config) {
 }
 
 export const firebaseConfig = {
-  apiKey: "AIzaSyB5WvKCRNT1lrbqaBlsXnhZTQCubDauT2Q",
+  apiKey: "AIzaSyB5WVkCRNT1lrbqaBlsXnhZTQCubDauT2Q",
   authDomain: "fin-tracker-98950.firebaseapp.com",
   projectId: "fin-tracker-98950",
-  storageBucket: "fin-tracker-98950.appspot.com",
+  storageBucket: "fin-tracker-98950.firebasestorage.app",
   messagingSenderId: "312172730990",
   appId: "1:312172730990:web:d3ffd473bd5a2606ab247f",
 };

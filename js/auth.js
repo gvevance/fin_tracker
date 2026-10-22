@@ -6,12 +6,44 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { auth } from "./firebase.js";
 
-export function signUp(email, password) {
-  return createUserWithEmailAndPassword(auth, email, password);
+/** Internal domain — Firebase Auth still uses email/password under the hood. */
+const AUTH_EMAIL_DOMAIN = "users.fintracker.local";
+
+const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,24}$/;
+
+export function normalizeUsername(username) {
+  return String(username).trim();
 }
 
-export function signIn(email, password) {
-  return signInWithEmailAndPassword(auth, email, password);
+export function validateUsername(username) {
+  const value = normalizeUsername(username);
+  if (!USERNAME_PATTERN.test(value)) {
+    throw new Error(
+      "Username must be 3–24 characters: letters, numbers, and underscore only."
+    );
+  }
+  return value;
+}
+
+export function usernameToAuthEmail(username) {
+  const value = validateUsername(username);
+  return `${value.toLowerCase()}@${AUTH_EMAIL_DOMAIN}`;
+}
+
+export function signUp(username, password) {
+  return createUserWithEmailAndPassword(
+    auth,
+    usernameToAuthEmail(username),
+    password
+  );
+}
+
+export function signIn(username, password) {
+  return signInWithEmailAndPassword(
+    auth,
+    usernameToAuthEmail(username),
+    password
+  );
 }
 
 export function signOut() {
@@ -22,12 +54,24 @@ export function getCurrentUser() {
   return auth.currentUser;
 }
 
-/** Resolves when Firebase has checked persisted auth state. */
-export function waitForAuth() {
+/** After persisted session has been restored (or cleared). */
+export async function waitForAuth() {
+  await auth.authStateReady();
+  return auth.currentUser;
+}
+
+/** Resolves once Firebase reports no signed-in user. */
+export function waitUntilSignedOut() {
   return new Promise((resolve) => {
+    if (!auth.currentUser) {
+      resolve();
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      unsubscribe();
-      resolve(user);
+      if (!user) {
+        unsubscribe();
+        resolve();
+      }
     });
   });
 }

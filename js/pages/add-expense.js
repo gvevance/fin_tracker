@@ -1,14 +1,10 @@
 import { requireAuth } from "../auth-guard.js";
 import { addExpense } from "../expenses.js";
 
-const user = await requireAuth();
-if (!user) return;
-
 const form = document.getElementById("expense-form");
 const errorEl = document.getElementById("form-error");
 const successEl = document.getElementById("form-success");
-
-const dateInput = form.querySelector('[name="spentAt"]');
+const dateInput = document.getElementById("spent-at");
 
 function setDateToToday() {
   const now = new Date();
@@ -18,6 +14,9 @@ function setDateToToday() {
 }
 
 setDateToToday();
+
+const user = await requireAuth();
+if (!user) return;
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();

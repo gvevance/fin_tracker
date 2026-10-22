@@ -16,16 +16,33 @@
       <span class="top-bar__title">Monthly expenses</span>
     </header>
     <main class="page">
-      <form id="month-form" class="card row">
+      <div class="card row">
         <label class="field field--grow">
           <span>Month</span>
-          <input type="month" name="month" required />
+          <input type="month" id="month-picker" name="month" required />
         </label>
-        <button type="submit" class="btn">Load</button>
-      </form>
+      </div>
+      <script>
+        (function () {
+          var el = document.getElementById("month-picker");
+          if (!el) return;
+          var d = new Date();
+          el.value =
+            d.getFullYear() +
+            "-" +
+            String(d.getMonth() + 1).padStart(2, "0");
+        })();
+      </script>
 
-      <p id="month-total" class="month-total"></p>
+      <section id="month-summary" class="card summary-card" aria-live="polite">
+        <h2 id="summary-title" class="summary-title">Monthly summary</h2>
+        <p id="summary-total" class="summary-total">—</p>
+        <p id="summary-meta" class="muted">Preparing…</p>
+        <ul id="summary-categories" class="summary-categories"></ul>
+      </section>
+
       <p id="list-error" class="error hidden" role="alert"></p>
+      <h3 class="section-heading">All expenses</h3>
       <p id="list-empty" class="muted hidden">No expenses for this month.</p>
       <ul id="expense-list" class="expense-list"></ul>
     </main>

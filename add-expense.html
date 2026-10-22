@@ -50,8 +50,21 @@
         </label>
         <label class="field">
           <span>Date</span>
-          <input type="date" name="spentAt" required />
+          <input type="date" id="spent-at" name="spentAt" required />
         </label>
+        <script>
+          (function () {
+            var el = document.getElementById("spent-at");
+            if (!el) return;
+            var d = new Date();
+            el.value =
+              d.getFullYear() +
+              "-" +
+              String(d.getMonth() + 1).padStart(2, "0") +
+              "-" +
+              String(d.getDate()).padStart(2, "0");
+          })();
+        </script>
         <label class="field">
           <span>Note (optional)</span>
           <input type="text" name="note" maxlength="200" />

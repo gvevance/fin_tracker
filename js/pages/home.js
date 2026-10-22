@@ -1,13 +1,15 @@
 import { requireAuth } from "../auth-guard.js";
-import { signOut } from "../auth.js";
+import { signOut, waitUntilSignedOut } from "../auth.js";
+
+document.getElementById("sign-out-btn")?.addEventListener("click", async () => {
+  try {
+    await signOut();
+    await waitUntilSignedOut();
+  } catch (err) {
+    console.error("Sign out failed:", err);
+  }
+  window.location.replace("login.html");
+});
 
 const user = await requireAuth();
 if (!user) return;
-
-const signOutBtn = document.getElementById("sign-out-btn");
-if (signOutBtn) {
-  signOutBtn.addEventListener("click", async () => {
-    await signOut();
-    window.location.replace("login.html");
-  });
-}
