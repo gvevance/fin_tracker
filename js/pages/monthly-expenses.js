@@ -1,6 +1,5 @@
 import { requireAuth } from "../auth-guard.js";
-import { getExpensesForMonth, formatMoney } from "../expenses.js";
-import { Timestamp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { getExpensesForMonth, formatMoney, toExpenseDate } from "../expenses.js";
 
 const monthInput =
   document.getElementById("month-picker") ||
@@ -23,13 +22,6 @@ function showError(message) {
 function currentMonthValue() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function spentAtToDate(spentAt) {
-  if (spentAt instanceof Timestamp) {
-    return spentAt.toDate();
-  }
-  return new Date(spentAt);
 }
 
 function monthLabel(year, month) {
@@ -107,8 +99,9 @@ async function loadMonth(user) {
     }
 
     for (const expense of expenses) {
+      const date = toExpenseDate(expense.spentAt);
+      if (!date) continue;
       const li = document.createElement("li");
-      const date = spentAtToDate(expense.spentAt);
       li.className = "expense-item";
       li.innerHTML = `
         <div class="expense-item__main">

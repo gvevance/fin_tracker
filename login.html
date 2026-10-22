@@ -11,11 +11,31 @@
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
+    <noscript>
+      <p style="padding: 1rem; color: #eee">
+        JavaScript is required. Enable it to sign in.
+      </p>
+    </noscript>
     <main class="page">
       <div class="card">
         <h1>Financial Tracker</h1>
-        <p class="muted">Sign in or create an account</p>
+        <p class="muted login-intro">Sign in to continue. New here? Use Register.</p>
 
+        <div id="signed-in-panel" class="stack hidden">
+          <p class="muted">You have an active session on this device.</p>
+          <button type="button" id="continue-btn" class="btn btn--block">
+            Continue to app
+          </button>
+          <button
+            type="button"
+            id="login-sign-out-btn"
+            class="btn btn--block btn--ghost"
+          >
+            Sign out
+          </button>
+        </div>
+
+        <div id="auth-forms">
         <div class="tabs" role="tablist">
           <button type="button" class="tab active" data-tab="signin" role="tab">
             Sign in
@@ -78,6 +98,7 @@
           </label>
           <button type="submit" class="btn btn--block">Create account</button>
         </form>
+        </div>
 
         <p id="auth-error" class="error hidden" role="alert"></p>
       </div>

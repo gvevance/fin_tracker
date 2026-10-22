@@ -50,6 +50,14 @@ export function signOut() {
   return firebaseSignOut(auth);
 }
 
+export async function signOutToLogin() {
+  const { lockApp } = await import("./session.js");
+  lockApp();
+  await firebaseSignOut(auth);
+  await waitUntilSignedOut();
+  window.location.replace("login.html");
+}
+
 export function getCurrentUser() {
   return auth.currentUser;
 }

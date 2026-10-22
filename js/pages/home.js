@@ -1,15 +1,21 @@
+import { isAppUnlocked, lockApp } from "../session.js";
 import { requireAuth } from "../auth-guard.js";
-import { signOut, waitUntilSignedOut } from "../auth.js";
+import { signOutToLogin } from "../auth.js";
 
-document.getElementById("sign-out-btn")?.addEventListener("click", async () => {
-  try {
-    await signOut();
-    await waitUntilSignedOut();
-  } catch (err) {
-    console.error("Sign out failed:", err);
-  }
+if (!isAppUnlocked()) {
   window.location.replace("login.html");
-});
+} else {
+  const user = await requireAuth();
+  if (!user) {
+    lockApp();
+    return;
+  }
 
-const user = await requireAuth();
-if (!user) return;
+  document.getElementById("sign-out-btn")?.addEventListener("click", () => {
+    signOutToLogin().catch((err) => {
+      console.error("Sign out failed:", err);
+      lockApp();
+      window.location.replace("login.html");
+    });
+  });
+}

@@ -1,10 +1,15 @@
-import { signIn, signUp, waitForAuth } from "../auth.js";
+import { signIn, signUp, waitForAuth, signOut } from "../auth.js";
+import { unlockApp } from "../session.js";
 import { firebaseConfig, isFirebaseConfigured } from "../firebase-config.js";
 
 const signinForm = document.getElementById("signin-form");
 const signupForm = document.getElementById("signup-form");
 const errorEl = document.getElementById("auth-error");
 const tabs = document.querySelectorAll(".tab");
+const authForms = document.getElementById("auth-forms");
+const signedInPanel = document.getElementById("signed-in-panel");
+const continueBtn = document.getElementById("continue-btn");
+const loginSignOutBtn = document.getElementById("login-sign-out-btn");
 
 function getReturnPath() {
   const params = new URLSearchParams(window.location.search);
@@ -13,6 +18,11 @@ function getReturnPath() {
     return returnTo;
   }
   return "index.html";
+}
+
+function goToApp() {
+  unlockApp();
+  window.location.replace(getReturnPath());
 }
 
 function formatAuthError(err) {
@@ -44,6 +54,20 @@ function clearError() {
   errorEl.classList.add("hidden");
 }
 
+function showSignedInView() {
+  authForms?.classList.add("hidden");
+  tabs.forEach((tab) => tab.classList.add("hidden"));
+  signedInPanel?.classList.remove("hidden");
+  document.querySelector(".login-intro")?.classList.add("hidden");
+}
+
+function showSignInView() {
+  authForms?.classList.remove("hidden");
+  tabs.forEach((tab) => tab.classList.remove("hidden"));
+  signedInPanel?.classList.add("hidden");
+  document.querySelector(".login-intro")?.classList.remove("hidden");
+}
+
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     const name = tab.dataset.tab;
@@ -58,7 +82,7 @@ async function handleAuth(promise) {
   clearError();
   try {
     await promise;
-    window.location.replace(getReturnPath());
+    goToApp();
   } catch (err) {
     showError(formatAuthError(err));
   }
@@ -76,6 +100,20 @@ signupForm.addEventListener("submit", (e) => {
   handleAuth(signUp(data.get("username"), data.get("password")));
 });
 
+continueBtn?.addEventListener("click", () => {
+  goToApp();
+});
+
+loginSignOutBtn?.addEventListener("click", async () => {
+  clearError();
+  try {
+    await signOut();
+    showSignInView();
+  } catch (err) {
+    showError(formatAuthError(err));
+  }
+});
+
 if (!isFirebaseConfigured(firebaseConfig)) {
   showError(
     "Firebase is not configured. Copy js/firebase-config.example.js values into js/firebase-config.js from the Firebase Console."
@@ -85,6 +123,8 @@ if (!isFirebaseConfigured(firebaseConfig)) {
 } else {
   const existing = await waitForAuth();
   if (existing) {
-    window.location.replace(getReturnPath());
+    showSignedInView();
+  } else {
+    showSignInView();
   }
 }

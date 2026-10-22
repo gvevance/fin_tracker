@@ -1,4 +1,4 @@
-const CACHE_NAME = "financial-tracker-v9";
+const CACHE_NAME = "financial-tracker-v14";
 
 const PRECACHE_URLS = [
   "./",
@@ -12,6 +12,7 @@ const PRECACHE_URLS = [
   "js/firebase.js",
   "js/auth.js",
   "js/auth-guard.js",
+  "js/session.js",
   "js/expenses.js",
   "js/pages/home.js",
   "js/pages/login.js",
@@ -61,7 +62,7 @@ self.addEventListener("fetch", (event) => {
         .catch(() =>
           caches
             .match(request)
-            .then((cached) => cached || caches.match("index.html"))
+            .then((cached) => cached || caches.match("login.html"))
         )
     );
     return;
