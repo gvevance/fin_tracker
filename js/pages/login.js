@@ -1,5 +1,4 @@
 import { signIn, signUp, waitForAuth, signOut } from "../auth.js";
-import { unlockApp } from "../session.js";
 import { firebaseConfig, isFirebaseConfigured } from "../firebase-config.js";
 
 const signinForm = document.getElementById("signin-form");
@@ -21,7 +20,6 @@ function getReturnPath() {
 }
 
 function goToApp() {
-  unlockApp();
   window.location.replace(getReturnPath());
 }
 

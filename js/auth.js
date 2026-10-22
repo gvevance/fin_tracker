@@ -51,8 +51,6 @@ export function signOut() {
 }
 
 export async function signOutToLogin() {
-  const { lockApp } = await import("./session.js");
-  lockApp();
   await firebaseSignOut(auth);
   await waitUntilSignedOut();
   window.location.replace("login.html");

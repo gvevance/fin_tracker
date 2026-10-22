@@ -1,4 +1,3 @@
-import { isAppUnlocked } from "../session.js";
 import { requireAuth } from "../auth-guard.js";
 import { addExpense, parseDateInputValue } from "../expenses.js";
 
@@ -30,13 +29,10 @@ function showSuccess(message) {
 
 setDateToToday();
 
-if (!isAppUnlocked()) {
-  window.location.replace("login.html");
-} else {
-  let user = null;
-  let saving = false;
+let user = null;
+let saving = false;
 
-  form.addEventListener("submit", async (e) => {
+form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     if (saving) return;
@@ -93,10 +89,6 @@ if (!isAppUnlocked()) {
         saveBtn.textContent = "Save expense";
       }
     }
-  });
+});
 
-  user = await requireAuth();
-  if (!user) {
-    // requireAuth redirects to login
-  }
-}
+user = await requireAuth();

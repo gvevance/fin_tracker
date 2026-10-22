@@ -14,8 +14,13 @@ if ("serviceWorker" in navigator) {
       return;
     }
 
-    navigator.serviceWorker.register("sw.js", { scope: "./" }).catch((err) => {
-      console.error("Service worker registration failed:", err);
-    });
+    navigator.serviceWorker
+      .register("sw.js", { scope: "./" })
+      .then((registration) => {
+        registration.update();
+      })
+      .catch((err) => {
+        console.error("Service worker registration failed:", err);
+      });
   });
 }

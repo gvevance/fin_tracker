@@ -1,23 +1,8 @@
-const CACHE_NAME = "financial-tracker-v14";
+const CACHE_NAME = "financial-tracker-v16";
 
+/** Shell assets only — app JS/CSS use network-first so updates are not stuck on old cache. */
 const PRECACHE_URLS = [
-  "./",
-  "index.html",
   "login.html",
-  "monthly-expenses.html",
-  "add-expense.html",
-  "css/styles.css",
-  "js/main.js",
-  "js/firebase-config.js",
-  "js/firebase.js",
-  "js/auth.js",
-  "js/auth-guard.js",
-  "js/session.js",
-  "js/expenses.js",
-  "js/pages/home.js",
-  "js/pages/login.js",
-  "js/pages/add-expense.js",
-  "js/pages/monthly-expenses.js",
   "manifest.json",
   "icons/icon.svg",
   "icons/icon-192.svg",
@@ -46,8 +31,25 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+function networkFirst(request) {
+  return fetch(request)
+    .then((response) => {
+      if (response.ok) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      }
+      return response;
+    })
+    .catch(() => caches.match(request));
+}
+
+function isAppScript(url) {
+  return /\.(js|css|html)$/.test(url.pathname);
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
+  const url = new URL(request.url);
 
   if (request.mode === "navigate") {
     event.respondWith(
@@ -65,6 +67,11 @@ self.addEventListener("fetch", (event) => {
             .then((cached) => cached || caches.match("login.html"))
         )
     );
+    return;
+  }
+
+  if (isAppScript(url)) {
+    event.respondWith(networkFirst(request));
     return;
   }
 
