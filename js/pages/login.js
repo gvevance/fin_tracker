@@ -98,8 +98,21 @@ signupForm.addEventListener("submit", (e) => {
   handleAuth(signUp(data.get("username"), data.get("password")));
 });
 
-continueBtn?.addEventListener("click", () => {
-  goToApp();
+continueBtn?.addEventListener("click", async () => {
+  clearError();
+  try {
+    const user = await waitForAuth();
+    if (!user) {
+      showError("Session expired. Please sign in again.");
+      showSignInView();
+      return;
+    }
+    await user.getIdToken();
+    goToApp();
+  } catch (err) {
+    showError(formatAuthError(err));
+    showSignInView();
+  }
 });
 
 loginSignOutBtn?.addEventListener("click", async () => {

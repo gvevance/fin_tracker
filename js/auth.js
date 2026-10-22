@@ -60,10 +60,28 @@ export function getCurrentUser() {
   return auth.currentUser;
 }
 
-/** After persisted session has been restored (or cleared). */
+/** Wait for Firebase to restore persisted sign-in (avoids false logouts on navigation). */
 export async function waitForAuth() {
   await auth.authStateReady();
-  return auth.currentUser;
+  if (auth.currentUser) {
+    return auth.currentUser;
+  }
+
+  return new Promise((resolve) => {
+    const timeoutMs = 5000;
+    const timeout = setTimeout(() => {
+      unsubscribe();
+      resolve(auth.currentUser);
+    }, timeoutMs);
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        clearTimeout(timeout);
+        unsubscribe();
+        resolve(user);
+      }
+    });
+  });
 }
 
 /** Resolves once Firebase reports no signed-in user. */

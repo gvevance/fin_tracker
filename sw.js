@@ -1,4 +1,4 @@
-const CACHE_NAME = "financial-tracker-v16";
+const CACHE_NAME = "financial-tracker-v17";
 
 /** Shell assets only — app JS/CSS use network-first so updates are not stuck on old cache. */
 const PRECACHE_URLS = [
@@ -47,9 +47,22 @@ function isAppScript(url) {
   return /\.(js|css|html)$/.test(url.pathname);
 }
 
+function isFirebaseOrGoogleRequest(url) {
+  return (
+    url.hostname.endsWith("googleapis.com") ||
+    url.hostname.endsWith("gstatic.com") ||
+    url.hostname === "www.googleapis.com"
+  );
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  if (isFirebaseOrGoogleRequest(url)) {
+    event.respondWith(fetch(request));
+    return;
+  }
 
   if (request.mode === "navigate") {
     event.respondWith(
