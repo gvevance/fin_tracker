@@ -11,9 +11,20 @@
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
-    <main class="app">
-      <h1>HELLO</h1>
+    <header class="top-bar">
+      <span class="top-bar__title">Financial Tracker</span>
+      <button type="button" id="sign-out-btn" class="btn btn--small btn--ghost">
+        Sign out
+      </button>
+    </header>
+    <main class="app app--home">
+      <h1>What would you like to do?</h1>
+      <nav class="nav-actions" aria-label="Main">
+        <a class="btn" href="monthly-expenses.html">See monthly expenses</a>
+        <a class="btn" href="add-expense.html">Add expense</a>
+      </nav>
     </main>
     <script src="js/main.js" type="module"></script>
+    <script type="module" src="js/pages/home.js"></script>
   </body>
 </html>

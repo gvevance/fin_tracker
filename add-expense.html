@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1a1a2e" />
+    <meta name="description" content="Add expense — Financial Tracker" />
+    <title>Add expense — Financial Tracker</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header class="top-bar">
+      <a class="top-bar__back" href="index.html">← Home</a>
+      <span class="top-bar__title">Add expense</span>
+    </header>
+    <main class="page">
+      <form id="expense-form" class="card stack">
+        <label class="field">
+          <span>Amount</span>
+          <input
+            type="number"
+            name="amount"
+            required
+            min="0.01"
+            step="0.01"
+            inputmode="decimal"
+          />
+        </label>
+        <label class="field">
+          <span>Currency</span>
+          <select name="currency">
+            <option value="INR" selected>INR</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Category</span>
+          <select name="category">
+            <option value="Food">Food</option>
+            <option value="Transport">Transport</option>
+            <option value="Housing">Housing</option>
+            <option value="Utilities">Utilities</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Health">Health</option>
+            <option value="Other" selected>Other</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Date</span>
+          <input type="date" name="spentAt" required />
+        </label>
+        <label class="field">
+          <span>Note (optional)</span>
+          <input type="text" name="note" maxlength="200" />
+        </label>
+        <button type="submit" class="btn btn--block">Save expense</button>
+        <p id="form-error" class="error hidden" role="alert"></p>
+        <p id="form-success" class="success hidden" role="status"></p>
+      </form>
+    </main>
+    <script src="js/main.js" type="module"></script>
+    <script type="module" src="js/pages/add-expense.js"></script>
+  </body>
+</html>
