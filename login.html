@@ -2,107 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#1a1a2e" />
-    <meta name="description" content="Sign in — Financial Tracker" />
+    <meta http-equiv="refresh" content="0; url=index.html" />
     <title>Sign in — Financial Tracker</title>
-    <link rel="manifest" href="manifest.json" />
-    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="css/styles.css" />
+    <script>
+      location.replace("index.html" + location.search);
+    </script>
   </head>
   <body>
-    <noscript>
-      <p style="padding: 1rem; color: #eee">
-        JavaScript is required. Enable it to sign in.
-      </p>
-    </noscript>
-    <main class="page">
-      <div class="card">
-        <h1>Financial Tracker</h1>
-        <p class="muted login-intro">Sign in to continue. New here? Use Register.</p>
-
-        <div id="signed-in-panel" class="stack hidden">
-          <p class="muted">You have an active session on this device.</p>
-          <button type="button" id="continue-btn" class="btn btn--block">
-            Continue to app
-          </button>
-          <button
-            type="button"
-            id="login-sign-out-btn"
-            class="btn btn--block btn--ghost"
-          >
-            Sign out
-          </button>
-        </div>
-
-        <div id="auth-forms">
-        <div class="tabs" role="tablist">
-          <button type="button" class="tab active" data-tab="signin" role="tab">
-            Sign in
-          </button>
-          <button type="button" class="tab" data-tab="signup" role="tab">
-            Register
-          </button>
-        </div>
-
-        <form id="signin-form" class="stack" data-panel="signin">
-          <label class="field">
-            <span>Username</span>
-            <input
-              type="text"
-              name="username"
-              required
-              autocomplete="username"
-              minlength="3"
-              maxlength="24"
-              pattern="[a-zA-Z0-9_]{3,24}"
-              title="3–24 characters: letters, numbers, underscore"
-            />
-          </label>
-          <label class="field">
-            <span>Password</span>
-            <input
-              type="password"
-              name="password"
-              required
-              autocomplete="current-password"
-              minlength="6"
-            />
-          </label>
-          <button type="submit" class="btn btn--block">Sign in</button>
-        </form>
-
-        <form id="signup-form" class="stack hidden" data-panel="signup">
-          <label class="field">
-            <span>Username</span>
-            <input
-              type="text"
-              name="username"
-              required
-              autocomplete="username"
-              minlength="3"
-              maxlength="24"
-              pattern="[a-zA-Z0-9_]{3,24}"
-              title="3–24 characters: letters, numbers, underscore"
-            />
-          </label>
-          <label class="field">
-            <span>Password</span>
-            <input
-              type="password"
-              name="password"
-              required
-              autocomplete="new-password"
-              minlength="6"
-            />
-          </label>
-          <button type="submit" class="btn btn--block">Create account</button>
-        </form>
-        </div>
-
-        <p id="auth-error" class="error hidden" role="alert"></p>
-      </div>
-    </main>
-    <script type="module" src="js/pages/login.js"></script>
+    <p><a href="index.html">Continue to sign in</a></p>
   </body>
 </html>

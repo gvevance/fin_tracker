@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1a1a2e" />
+    <meta name="description" content="Financial Tracker PWA" />
+    <title>Financial Tracker</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header class="top-bar">
+      <span class="top-bar__title">Financial Tracker</span>
+      <button type="button" id="sign-out-btn" class="btn btn--small btn--ghost">
+        Sign out
+      </button>
+    </header>
+    <main class="app app--home">
+      <h1>What would you like to do?</h1>
+      <nav class="nav-actions" aria-label="Main">
+        <a class="btn" href="monthly-expenses.html">See monthly expenses</a>
+        <a class="btn" href="add-expense.html">Add expense</a>
+      </nav>
+    </main>
+    <script type="module" src="js/pages/home.js"></script>
+    <script src="js/main.js" type="module"></script>
+  </body>
+</html>

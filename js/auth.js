@@ -1,12 +1,11 @@
 import {
-  createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { auth } from "./firebase.js";
 
-/** Internal domain — Firebase Auth still uses email/password under the hood. */
+/** Internal domain — login screen asks for username only. */
 const AUTH_EMAIL_DOMAIN = "users.fintracker.local";
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,24}$/;
@@ -30,14 +29,6 @@ export function usernameToAuthEmail(username) {
   return `${value.toLowerCase()}@${AUTH_EMAIL_DOMAIN}`;
 }
 
-export function signUp(username, password) {
-  return createUserWithEmailAndPassword(
-    auth,
-    usernameToAuthEmail(username),
-    password
-  );
-}
-
 export function signIn(username, password) {
   return signInWithEmailAndPassword(
     auth,
@@ -53,7 +44,7 @@ export function signOut() {
 export async function signOutToLogin() {
   await firebaseSignOut(auth);
   await waitUntilSignedOut();
-  window.location.replace("login.html");
+  window.location.replace("index.html");
 }
 
 export function getCurrentUser() {

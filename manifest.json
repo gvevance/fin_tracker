@@ -2,7 +2,7 @@
   "name": "Financial Tracker",
   "short_name": "FinTrack",
   "description": "Financial Tracker PWA",
-  "start_url": "./login.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#1a1a2e",

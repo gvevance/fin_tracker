@@ -1,0 +1,11 @@
+{
+  "name": "financial-tracker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy:rules": "firebase deploy --only firestore:rules"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.34.1"
+  }
+}

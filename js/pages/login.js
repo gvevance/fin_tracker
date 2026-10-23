@@ -1,44 +1,28 @@
-import { signIn, signUp, waitForAuth, signOut } from "../auth.js";
+import { signIn } from "../auth.js";
 import { firebaseConfig, isFirebaseConfigured } from "../firebase-config.js";
 
 const signinForm = document.getElementById("signin-form");
-const signupForm = document.getElementById("signup-form");
 const errorEl = document.getElementById("auth-error");
-const tabs = document.querySelectorAll(".tab");
-const authForms = document.getElementById("auth-forms");
-const signedInPanel = document.getElementById("signed-in-panel");
-const continueBtn = document.getElementById("continue-btn");
-const loginSignOutBtn = document.getElementById("login-sign-out-btn");
-
-function getReturnPath() {
-  const params = new URLSearchParams(window.location.search);
-  const returnTo = params.get("return");
-  if (returnTo && !returnTo.includes("..")) {
-    return returnTo;
-  }
-  return "index.html";
-}
+const submitBtn = signinForm?.querySelector('button[type="submit"]');
 
 function goToApp() {
-  window.location.replace(getReturnPath());
+  window.location.replace("home.html");
 }
 
 function formatAuthError(err) {
   const code = err?.code || "";
   switch (code) {
-    case "auth/email-already-in-use":
-      return "That username is already taken.";
     case "auth/invalid-credential":
     case "auth/wrong-password":
     case "auth/user-not-found":
       return "Invalid username or password.";
-    case "auth/weak-password":
-      return "Password must be at least 6 characters.";
+    case "auth/operation-not-allowed":
+      return "Email/password sign-in is disabled in Firebase. Turn on Email/Password under Authentication → Sign-in method.";
     case "auth/api-key-not-valid":
     case "auth/invalid-api-key":
-      return "Invalid Firebase API key. Update js/firebase-config.js from Firebase Console → Project settings → Your web app.";
+      return "Invalid Firebase API key. Update js/firebase-config.js from Firebase Console.";
     default:
-      return err.message || "Authentication failed.";
+      return err.message || "Sign in failed.";
   }
 }
 
@@ -52,90 +36,35 @@ function clearError() {
   errorEl.classList.add("hidden");
 }
 
-function showSignedInView() {
-  authForms?.classList.add("hidden");
-  tabs.forEach((tab) => tab.classList.add("hidden"));
-  signedInPanel?.classList.remove("hidden");
-  document.querySelector(".login-intro")?.classList.add("hidden");
-}
-
-function showSignInView() {
-  authForms?.classList.remove("hidden");
-  tabs.forEach((tab) => tab.classList.remove("hidden"));
-  signedInPanel?.classList.add("hidden");
-  document.querySelector(".login-intro")?.classList.remove("hidden");
-}
-
-tabs.forEach((tab) => {
-  tab.addEventListener("click", () => {
-    const name = tab.dataset.tab;
-    tabs.forEach((t) => t.classList.toggle("active", t === tab));
-    signinForm.classList.toggle("hidden", name !== "signin");
-    signupForm.classList.toggle("hidden", name !== "signup");
-    clearError();
-  });
-});
-
-async function handleAuth(promise) {
-  clearError();
-  try {
-    await promise;
-    goToApp();
-  } catch (err) {
-    showError(formatAuthError(err));
-  }
-}
-
-signinForm.addEventListener("submit", (e) => {
+signinForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
+  clearError();
+
   const data = new FormData(signinForm);
-  handleAuth(signIn(data.get("username"), data.get("password")));
-});
+  const username = data.get("username");
+  const password = data.get("password");
 
-signupForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const data = new FormData(signupForm);
-  handleAuth(signUp(data.get("username"), data.get("password")));
-});
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Signing in…";
+  }
 
-continueBtn?.addEventListener("click", async () => {
-  clearError();
   try {
-    const user = await waitForAuth();
-    if (!user) {
-      showError("Session expired. Please sign in again.");
-      showSignInView();
-      return;
-    }
-    await user.getIdToken();
+    await signIn(username, password);
     goToApp();
   } catch (err) {
     showError(formatAuthError(err));
-    showSignInView();
-  }
-});
-
-loginSignOutBtn?.addEventListener("click", async () => {
-  clearError();
-  try {
-    await signOut();
-    showSignInView();
-  } catch (err) {
-    showError(formatAuthError(err));
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Sign in";
+    }
   }
 });
 
 if (!isFirebaseConfigured(firebaseConfig)) {
   showError(
-    "Firebase is not configured. Copy js/firebase-config.example.js values into js/firebase-config.js from the Firebase Console."
+    "Firebase is not configured. Copy js/firebase-config.example.js into js/firebase-config.js."
   );
-  signinForm.querySelector("button[type=submit]").disabled = true;
-  signupForm.querySelector("button[type=submit]").disabled = true;
-} else {
-  const existing = await waitForAuth();
-  if (existing) {
-    showSignedInView();
-  } else {
-    showSignInView();
-  }
+  if (submitBtn) submitBtn.disabled = true;
 }

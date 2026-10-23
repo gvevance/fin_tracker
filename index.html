@@ -4,27 +4,54 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#1a1a2e" />
-    <meta name="description" content="Financial Tracker PWA" />
-    <title>Financial Tracker</title>
+    <meta name="description" content="Sign in — Financial Tracker" />
+    <title>Sign in — Financial Tracker</title>
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
-    <header class="top-bar">
-      <span class="top-bar__title">Financial Tracker</span>
-      <button type="button" id="sign-out-btn" class="btn btn--small btn--ghost">
-        Sign out
-      </button>
-    </header>
-    <main class="app app--home">
-      <h1>What would you like to do?</h1>
-      <nav class="nav-actions" aria-label="Main">
-        <a class="btn" href="monthly-expenses.html">See monthly expenses</a>
-        <a class="btn" href="add-expense.html">Add expense</a>
-      </nav>
+    <noscript>
+      <p style="padding: 1rem; color: #eee">
+        JavaScript is required. Enable it to sign in.
+      </p>
+    </noscript>
+    <main class="page">
+      <div class="card">
+        <h1>Financial Tracker</h1>
+        <p class="muted login-intro">Sign in with your username and password.</p>
+
+        <form id="signin-form" class="stack">
+          <label class="field">
+            <span>Username</span>
+            <input
+              type="text"
+              name="username"
+              required
+              autocomplete="username"
+              minlength="3"
+              maxlength="24"
+              pattern="[a-zA-Z0-9_]{3,24}"
+              title="3–24 characters: letters, numbers, underscore"
+            />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input
+              type="password"
+              name="password"
+              required
+              autocomplete="current-password"
+              minlength="1"
+            />
+          </label>
+          <button type="submit" class="btn btn--block">Sign in</button>
+        </form>
+
+        <p id="auth-error" class="error hidden" role="alert"></p>
+      </div>
     </main>
-    <script type="module" src="js/pages/home.js"></script>
+    <script type="module" src="js/pages/login.js"></script>
     <script src="js/main.js" type="module"></script>
   </body>
 </html>
