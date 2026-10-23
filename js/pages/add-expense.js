@@ -69,7 +69,7 @@ form.addEventListener("submit", async (e) => {
     try {
       await addExpense(user.uid, {
         amount,
-        currency: data.get("currency") || "INR",
+        currency: "INR",
         category: data.get("category") || "Other",
         note: data.get("note") || "",
         spentAt,
