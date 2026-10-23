@@ -90,7 +90,7 @@ async function loadMonth(user) {
   }
 
   try {
-    const expenses = await getExpensesForMonth(user.uid, year, month);
+    const expenses = await getExpensesForMonth(year, month);
     renderSummary(year, month, expenses);
 
     if (expenses.length === 0) {

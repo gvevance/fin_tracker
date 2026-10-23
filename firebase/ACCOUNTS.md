@@ -34,6 +34,8 @@ They sign in on the app with:
 
 Passwords live in **Firebase Authentication** (Google’s secure user store), not in the Firestore database. Expense data stays in Firestore.
 
+Anyone who can sign in sees **all** expenses in the monthly report, not only their own.
+
 After changing rules in this repo, deploy once (from the project folder in WSL):
 
 ```bash

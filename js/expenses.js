@@ -1,8 +1,6 @@
 import {
   collection,
   addDoc,
-  query,
-  where,
   getDocs,
   Timestamp,
   serverTimestamp,
@@ -60,12 +58,11 @@ export async function addExpense(userId, { amount, currency, category, note, spe
   });
 }
 
-/** Fetches by user only (no composite index); filters month in the client. */
-export async function getExpensesForMonth(userId, year, month) {
+/** Shared household report: every signed-in user sees all expenses for the month. */
+export async function getExpensesForMonth(year, month) {
   const targetKey = `${year}-${String(month).padStart(2, "0")}`;
 
-  const q = query(collection(db, EXPENSES), where("userId", "==", userId));
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(collection(db, EXPENSES));
 
   const expenses = snapshot.docs.map((docSnap) => ({
     id: docSnap.id,

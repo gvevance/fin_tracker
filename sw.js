@@ -1,4 +1,4 @@
-const CACHE_NAME = "financial-tracker-v23";
+const CACHE_NAME = "financial-tracker-v24";
 
 /** Shell assets only — app JS/CSS use network-first so updates are not stuck on old cache. */
 const PRECACHE_URLS = [
