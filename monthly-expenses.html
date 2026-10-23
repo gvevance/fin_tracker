@@ -43,22 +43,18 @@
 
       <p id="list-error" class="error hidden" role="alert"></p>
 
-      <div class="card filters-card">
-        <label class="field filters-card__person">
-          <span>Person</span>
-          <span class="select-box">
-            <select id="filter-user">
-              <option value="">All people</option>
-            </select>
-          </span>
+      <div class="card stack filters-card">
+        <label class="field">
+          <span>Added by</span>
+          <select id="filter-user">
+            <option value="">All people</option>
+          </select>
         </label>
         <label class="field">
           <span>Category</span>
-          <span class="select-box">
-            <select id="filter-category">
-              <option value="">All categories</option>
-            </select>
-          </span>
+          <select id="filter-category">
+            <option value="">All categories</option>
+          </select>
         </label>
         <button type="button" id="clear-filters-btn" class="btn btn--small btn--ghost" disabled>
           Clear filters
