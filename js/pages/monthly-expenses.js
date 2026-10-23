@@ -1,5 +1,11 @@
 import { requireAuth } from "../auth-guard.js";
-import { getExpensesForMonth, formatMoney, toExpenseDate } from "../expenses.js";
+import {
+  getExpensesForMonth,
+  getUsernameMap,
+  addedByLabel,
+  formatMoney,
+  toExpenseDate,
+} from "../expenses.js";
 
 const monthInput =
   document.getElementById("month-picker") ||
@@ -90,7 +96,10 @@ async function loadMonth(user) {
   }
 
   try {
-    const expenses = await getExpensesForMonth(year, month);
+    const [expenses, usernameByUid] = await Promise.all([
+      getExpensesForMonth(year, month),
+      getUsernameMap().catch(() => new Map()),
+    ]);
     renderSummary(year, month, expenses);
 
     if (expenses.length === 0) {
@@ -110,6 +119,7 @@ async function loadMonth(user) {
         </div>
         <div class="expense-item__meta">
           <time datetime="${date.toISOString()}">${date.toLocaleDateString()}</time>
+          <span class="expense-item__added-by">Added by ${escapeHtml(addedByLabel(expense, usernameByUid))}</span>
           ${expense.note ? `<span>${escapeHtml(expense.note)}</span>` : ""}
         </div>
       `;

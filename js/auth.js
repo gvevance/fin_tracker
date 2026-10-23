@@ -6,7 +6,8 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-import { auth } from "./firebase.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { auth, db } from "./firebase.js";
 
 /** Internal domain — login screen asks for username only. */
 const AUTH_EMAIL_DOMAIN = "users.fintracker.local";
@@ -32,6 +33,24 @@ export function usernameToAuthEmail(username) {
   return `${value.toLowerCase()}@${AUTH_EMAIL_DOMAIN}`;
 }
 
+/** Username from the signed-in Firebase user (email is username@internal-domain). */
+export function usernameFromUser(user) {
+  const email = user?.email || "";
+  const local = email.split("@")[0];
+  if (!local) return "";
+  try {
+    return validateUsername(local);
+  } catch {
+    return local.toLowerCase();
+  }
+}
+
+export async function rememberUsername(user) {
+  const username = usernameFromUser(user);
+  if (!user?.uid || !username) return;
+  await setDoc(doc(db, "userProfiles", user.uid), { username }, { merge: true });
+}
+
 async function ensurePersistence() {
   try {
     await setPersistence(auth, browserLocalPersistence);
@@ -48,6 +67,9 @@ export async function signIn(username, password) {
     password
   );
   await credential.user.getIdToken();
+  await rememberUsername(credential.user).catch((err) => {
+    console.error("Could not store username:", err);
+  });
   return credential;
 }
 

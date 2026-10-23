@@ -1,4 +1,5 @@
 import { requireAuth } from "../auth-guard.js";
+import { usernameFromUser } from "../auth.js";
 import { addExpense, parseDateInputValue } from "../expenses.js";
 
 const form = document.getElementById("expense-form");
@@ -72,6 +73,7 @@ form.addEventListener("submit", async (e) => {
         category: data.get("category") || "Other",
         note: data.get("note") || "",
         spentAt,
+        addedBy: usernameFromUser(user),
       });
       showSuccess("Expense saved.");
       form.reset();

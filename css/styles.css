@@ -323,3 +323,7 @@ body {
   font-size: 0.8rem;
   color: #9a9ab0;
 }
+
+.expense-item__added-by {
+  color: #c8c8dc;
+}

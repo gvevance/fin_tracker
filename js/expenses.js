@@ -40,14 +40,20 @@ export function expenseInCalendarMonth(spentAt, year, month) {
   return date.getFullYear() === year && date.getMonth() + 1 === month;
 }
 
-export async function addExpense(userId, { amount, currency, category, note, spentAt }) {
+export async function addExpense(userId, { amount, currency, category, note, spentAt, addedBy }) {
   const spentDate = spentAt instanceof Date ? spentAt : parseDateInputValue(spentAt);
   if (Number.isNaN(spentDate.getTime())) {
     throw new Error("Invalid expense date.");
   }
 
+  const username = String(addedBy || "").trim().toLowerCase();
+  if (!username) {
+    throw new Error("Could not record who added this expense. Sign in again.");
+  }
+
   return addDoc(collection(db, EXPENSES), {
     userId,
+    addedBy: username,
     amount,
     currency,
     category,
@@ -56,6 +62,26 @@ export async function addExpense(userId, { amount, currency, category, note, spe
     monthKey: monthKeyFromDate(spentDate),
     createdAt: serverTimestamp(),
   });
+}
+
+export async function getUsernameMap() {
+  const snapshot = await getDocs(collection(db, "userProfiles"));
+  const map = new Map();
+  for (const docSnap of snapshot.docs) {
+    const username = docSnap.data()?.username;
+    if (typeof username === "string" && username) {
+      map.set(docSnap.id, username);
+    }
+  }
+  return map;
+}
+
+export function addedByLabel(expense, usernameByUid) {
+  const stored = String(expense.addedBy || "").trim();
+  if (stored) return stored;
+  const mapped = usernameByUid?.get(expense.userId);
+  if (mapped) return mapped;
+  return "Unknown";
 }
 
 /** Shared household report: every signed-in user sees all expenses for the month. */
