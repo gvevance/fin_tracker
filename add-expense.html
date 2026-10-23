@@ -30,15 +30,17 @@
         </label>
         <label class="field">
           <span>Category</span>
-          <select name="category">
-            <option value="Food">Food</option>
-            <option value="Transport">Transport</option>
-            <option value="Housing">Housing</option>
-            <option value="Utilities">Utilities</option>
-            <option value="Shopping">Shopping</option>
-            <option value="Health">Health</option>
-            <option value="Other" selected>Other</option>
-          </select>
+          <div class="combobox">
+            <input
+              type="text"
+              name="category"
+              id="category-input"
+              maxlength="40"
+              autocomplete="off"
+              placeholder="Type a category"
+            />
+            <ul id="category-list" class="combobox__list hidden" role="listbox"></ul>
+          </div>
         </label>
         <label class="field">
           <span>Date of expense</span>

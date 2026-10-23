@@ -9,6 +9,37 @@ import { db } from "./firebase.js";
 
 const EXPENSES = "expenses";
 
+export const DEFAULT_CATEGORIES = [
+  "Food",
+  "Transport",
+  "Housing",
+  "Utilities",
+  "Shopping",
+  "Health",
+  "Other",
+];
+
+export function resolveCategoryName(typed, knownCategories) {
+  const value = String(typed || "").trim();
+  if (!value) return "Other";
+  const match = knownCategories.find(
+    (name) => name.toLowerCase() === value.toLowerCase()
+  );
+  return match || value;
+}
+
+export async function getKnownCategories() {
+  const names = new Set(DEFAULT_CATEGORIES);
+  const snapshot = await getDocs(collection(db, EXPENSES));
+  for (const docSnap of snapshot.docs) {
+    const category = docSnap.data()?.category;
+    if (typeof category === "string" && category.trim()) {
+      names.add(category.trim());
+    }
+  }
+  return [...names].sort((a, b) => a.localeCompare(b));
+}
+
 /** Parse `<input type="date">` value in local time (avoids UTC day shift). */
 export function parseDateInputValue(value) {
   const [y, m, d] = String(value).split("-").map(Number);

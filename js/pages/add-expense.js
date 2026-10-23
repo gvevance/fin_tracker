@@ -1,12 +1,22 @@
 import { requireAuth } from "../auth-guard.js";
 import { usernameFromUser } from "../auth.js";
-import { addExpense, parseDateInputValue } from "../expenses.js";
+import {
+  addExpense,
+  parseDateInputValue,
+  getKnownCategories,
+  resolveCategoryName,
+  DEFAULT_CATEGORIES,
+} from "../expenses.js";
 
 const form = document.getElementById("expense-form");
 const errorEl = document.getElementById("form-error");
 const successEl = document.getElementById("form-success");
 const dateInput = document.getElementById("spent-at");
+const categoryInput = document.getElementById("category-input");
+const categoryList = document.getElementById("category-list");
 const saveBtn = form?.querySelector('button[type="submit"]');
+
+let knownCategories = [...DEFAULT_CATEGORIES];
 
 function setDateToToday() {
   if (!dateInput) return;
@@ -27,6 +37,61 @@ function showSuccess(message) {
   successEl.classList.remove("hidden");
   errorEl.classList.add("hidden");
 }
+
+function rememberCategory(name) {
+  if (!knownCategories.some((item) => item.toLowerCase() === name.toLowerCase())) {
+    knownCategories.push(name);
+    knownCategories.sort((a, b) => a.localeCompare(b));
+  }
+}
+
+function finishCategory() {
+  if (!categoryInput) return;
+  const resolved = resolveCategoryName(categoryInput.value, knownCategories);
+  categoryInput.value = resolved;
+  rememberCategory(resolved);
+  hideCategoryList();
+}
+
+function hideCategoryList() {
+  categoryList?.classList.add("hidden");
+}
+
+function showCategoryList() {
+  if (!categoryList || !categoryInput) return;
+  const query = categoryInput.value.trim().toLowerCase();
+  const matches = knownCategories.filter((name) =>
+    name.toLowerCase().includes(query)
+  );
+  categoryList.innerHTML = "";
+  for (const name of matches) {
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "combobox__option";
+    button.textContent = name;
+    button.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      categoryInput.value = name;
+      finishCategory();
+    });
+    item.appendChild(button);
+    categoryList.appendChild(item);
+  }
+  categoryList.classList.toggle("hidden", matches.length === 0);
+}
+
+categoryInput?.addEventListener("focus", showCategoryList);
+categoryInput?.addEventListener("input", showCategoryList);
+categoryInput?.addEventListener("blur", () => {
+  finishCategory();
+});
+categoryInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    finishCategory();
+  }
+});
 
 setDateToToday();
 
@@ -60,6 +125,12 @@ form.addEventListener("submit", async (e) => {
       return;
     }
 
+    const category = resolveCategoryName(data.get("category"), knownCategories);
+    if (!category) {
+      showError("Enter a category.");
+      return;
+    }
+
     saving = true;
     if (saveBtn) {
       saveBtn.disabled = true;
@@ -70,14 +141,16 @@ form.addEventListener("submit", async (e) => {
       await addExpense(user.uid, {
         amount,
         currency: "INR",
-        category: data.get("category") || "Other",
+        category,
         note: data.get("note") || "",
         spentAt,
         addedBy: usernameFromUser(user),
       });
+      rememberCategory(category);
       showSuccess("Expense saved.");
       form.reset();
       setDateToToday();
+      if (categoryInput) categoryInput.value = "";
     } catch (err) {
       if (!navigator.onLine) {
         showError("You are offline. Connect to save expenses.");
@@ -94,3 +167,10 @@ form.addEventListener("submit", async (e) => {
 });
 
 user = await requireAuth();
+if (user) {
+  try {
+    knownCategories = await getKnownCategories();
+  } catch (err) {
+    console.error("Could not load categories:", err);
+  }
+}

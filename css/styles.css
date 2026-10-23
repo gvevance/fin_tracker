@@ -197,6 +197,48 @@ body {
   outline-offset: 1px;
 }
 
+.combobox {
+  position: relative;
+}
+
+.combobox input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.combobox__list {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  max-height: 12rem;
+  overflow-y: auto;
+  background-color: #1a1a2e;
+  border: 1px solid #3a3a5a;
+  border-radius: 0.4rem;
+}
+
+.combobox__option {
+  display: block;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: #eee;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.combobox__option:hover,
+.combobox__option.is-active {
+  background-color: #252545;
+}
+
 .muted {
   color: #9a9ab0;
   font-size: 0.9rem;
