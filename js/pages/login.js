@@ -1,4 +1,4 @@
-import { signIn } from "../auth.js";
+import { signIn, homeHref } from "../auth.js";
 import { firebaseConfig, isFirebaseConfigured } from "../firebase-config.js";
 
 const signinForm = document.getElementById("signin-form");
@@ -6,7 +6,7 @@ const errorEl = document.getElementById("auth-error");
 const submitBtn = signinForm?.querySelector('button[type="submit"]');
 
 function goToApp() {
-  window.location.replace("home.html");
+  window.location.assign(homeHref());
 }
 
 function formatAuthError(err) {
@@ -54,7 +54,6 @@ signinForm?.addEventListener("submit", async (e) => {
     goToApp();
   } catch (err) {
     showError(formatAuthError(err));
-  } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
       submitBtn.textContent = "Sign in";

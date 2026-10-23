@@ -2,6 +2,9 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { auth } from "./firebase.js";
 
@@ -29,22 +32,56 @@ export function usernameToAuthEmail(username) {
   return `${value.toLowerCase()}@${AUTH_EMAIL_DOMAIN}`;
 }
 
-export function signIn(username, password) {
-  return signInWithEmailAndPassword(
+async function ensurePersistence() {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+  } catch {
+    await setPersistence(auth, browserSessionPersistence);
+  }
+}
+
+export async function signIn(username, password) {
+  await ensurePersistence();
+  const credential = await signInWithEmailAndPassword(
     auth,
     usernameToAuthEmail(username),
     password
   );
+  await credential.user.getIdToken();
+  return credential;
 }
 
 export function signOut() {
   return firebaseSignOut(auth);
 }
 
+/** Login lives at the folder URL (index.html). Avoid `/index.html` — some servers redirect that until the browser errors. */
+export function loginHref() {
+  return new URL(".", window.location.href).href;
+}
+
+export function homeHref() {
+  return new URL("home.html", window.location.href).href;
+}
+
 export async function signOutToLogin() {
-  await firebaseSignOut(auth);
-  await waitUntilSignedOut();
-  window.location.replace("index.html");
+  const goToLogin = () => {
+    window.location.replace(loginHref());
+  };
+
+  const leaveTimer = setTimeout(goToLogin, 400);
+
+  try {
+    await Promise.race([
+      firebaseSignOut(auth),
+      new Promise((resolve) => setTimeout(resolve, 2000)),
+    ]);
+  } catch (err) {
+    console.error("Sign out failed:", err);
+  }
+
+  clearTimeout(leaveTimer);
+  goToLogin();
 }
 
 export function getCurrentUser() {
@@ -59,7 +96,7 @@ export async function waitForAuth() {
   }
 
   return new Promise((resolve) => {
-    const timeoutMs = 5000;
+    const timeoutMs = 8000;
     const timeout = setTimeout(() => {
       unsubscribe();
       resolve(auth.currentUser);

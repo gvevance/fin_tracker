@@ -1,7 +1,9 @@
-const CACHE_NAME = "financial-tracker-v20";
+const CACHE_NAME = "financial-tracker-v23";
 
 /** Shell assets only — app JS/CSS use network-first so updates are not stuck on old cache. */
 const PRECACHE_URLS = [
+  "index.html",
+  "home.html",
   "login.html",
   "manifest.json",
   "icons/icon.svg",
@@ -47,20 +49,12 @@ function isAppScript(url) {
   return /\.(js|css|html)$/.test(url.pathname);
 }
 
-function isFirebaseOrGoogleRequest(url) {
-  return (
-    url.hostname.endsWith("googleapis.com") ||
-    url.hostname.endsWith("gstatic.com") ||
-    url.hostname === "www.googleapis.com"
-  );
-}
-
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  if (isFirebaseOrGoogleRequest(url)) {
-    event.respondWith(fetch(request));
+  // Never intercept Firebase / Google / other origins — that breaks Android auth.
+  if (url.origin !== self.location.origin) {
     return;
   }
 
@@ -74,11 +68,7 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         })
-        .catch(() =>
-          caches
-            .match(request)
-            .then((cached) => cached || caches.match("login.html"))
-        )
+        .catch(() => caches.match(request).then((cached) => cached || caches.match("home.html")))
     );
     return;
   }

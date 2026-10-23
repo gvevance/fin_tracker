@@ -1,11 +1,9 @@
-import { waitForAuth } from "./auth.js";
-
-const LOGIN_PATH = "index.html";
+import { waitForAuth, loginHref } from "./auth.js";
 
 export async function requireAuth() {
   const user = await waitForAuth();
   if (!user) {
-    window.location.replace(LOGIN_PATH);
+    window.location.replace(loginHref());
     return null;
   }
   return user;

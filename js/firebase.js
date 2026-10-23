@@ -1,8 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
 import {
   initializeAuth,
-  indexedDBLocalPersistence,
   browserLocalPersistence,
+  browserSessionPersistence,
   getAuth,
   connectAuthEmulator,
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
@@ -16,8 +16,9 @@ const app = initializeApp(firebaseConfig);
 
 let auth;
 try {
+  // localStorage first: IndexedDB persistence often fails to restore on Android Chrome/PWA.
   auth = initializeAuth(app, {
-    persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+    persistence: [browserLocalPersistence, browserSessionPersistence],
   });
 } catch (err) {
   if (err.code === "auth/already-initialized") {
