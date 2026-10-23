@@ -1,4 +1,4 @@
-const CACHE_NAME = "financial-tracker-v26";
+const CACHE_NAME = "financial-tracker-v27";
 
 /** Icons only. Pages and scripts always come from the network so phones pick up updates. */
 const PRECACHE_URLS = [

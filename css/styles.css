@@ -286,6 +286,10 @@ body {
   border-bottom: none;
 }
 
+.filters-card {
+  margin-top: 1rem;
+}
+
 .section-heading {
   margin: 1.5rem 0 0.75rem;
   font-size: 1rem;

@@ -42,7 +42,26 @@
       </section>
 
       <p id="list-error" class="error hidden" role="alert"></p>
-      <h3 class="section-heading">All expenses</h3>
+
+      <div class="card stack filters-card">
+        <label class="field">
+          <span>Person</span>
+          <select id="filter-user">
+            <option value="">All people</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Category</span>
+          <select id="filter-category">
+            <option value="">All categories</option>
+          </select>
+        </label>
+        <button type="button" id="clear-filters-btn" class="btn btn--small btn--ghost" disabled>
+          Clear filters
+        </button>
+      </div>
+
+      <h3 class="section-heading" id="list-heading">All expenses</h3>
       <p id="list-empty" class="muted hidden">No expenses for this month.</p>
       <ul id="expense-list" class="expense-list"></ul>
     </main>

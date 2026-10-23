@@ -17,6 +17,13 @@ const summaryTitle = document.getElementById("summary-title");
 const summaryTotal = document.getElementById("summary-total");
 const summaryMeta = document.getElementById("summary-meta");
 const summaryCategories = document.getElementById("summary-categories");
+const userFilter = document.getElementById("filter-user");
+const categoryFilter = document.getElementById("filter-category");
+const clearFiltersBtn = document.getElementById("clear-filters-btn");
+const listHeading = document.getElementById("list-heading");
+
+let monthExpenses = [];
+let usernameByUid = new Map();
 
 function showError(message) {
   if (errorEl) {
@@ -43,6 +50,60 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+function selectedUser() {
+  return userFilter?.value || "";
+}
+
+function selectedCategory() {
+  return categoryFilter?.value || "";
+}
+
+function filtersActive() {
+  return Boolean(selectedUser() || selectedCategory());
+}
+
+function fillSelect(select, values, allLabel) {
+  if (!select) return;
+  const current = select.value;
+  select.innerHTML = "";
+  const all = document.createElement("option");
+  all.value = "";
+  all.textContent = allLabel;
+  select.appendChild(all);
+  for (const value of values) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
+  }
+  if ([...select.options].some((opt) => opt.value === current)) {
+    select.value = current;
+  } else {
+    select.value = "";
+  }
+}
+
+function populateFilters(expenses) {
+  const people = [
+    ...new Set(expenses.map((expense) => addedByLabel(expense, usernameByUid))),
+  ].sort((a, b) => a.localeCompare(b));
+  const categories = [
+    ...new Set(expenses.map((expense) => expense.category || "Other")),
+  ].sort((a, b) => a.localeCompare(b));
+  fillSelect(userFilter, people, "All people");
+  fillSelect(categoryFilter, categories, "All categories");
+}
+
+function filteredExpenses() {
+  const user = selectedUser();
+  const category = selectedCategory();
+  return monthExpenses.filter((expense) => {
+    if (user && addedByLabel(expense, usernameByUid) !== user) return false;
+    if (category && (expense.category || "Other") !== category) return false;
+    return true;
+  });
+}
+
 function renderSummary(year, month, expenses) {
   const label = monthLabel(year, month);
   let total = 0;
@@ -59,7 +120,10 @@ function renderSummary(year, month, expenses) {
   if (summaryTitle) summaryTitle.textContent = label;
   if (summaryTotal) summaryTotal.textContent = formatMoney(total, currency);
   if (summaryMeta) {
-    summaryMeta.textContent = `${expenses.length} expense${expenses.length === 1 ? "" : "s"}`;
+    const parts = [`${expenses.length} expense${expenses.length === 1 ? "" : "s"}`];
+    if (selectedUser()) parts.push(`by ${selectedUser()}`);
+    if (selectedCategory()) parts.push(`in ${selectedCategory()}`);
+    summaryMeta.textContent = parts.join(" · ");
   }
 
   if (summaryCategories) {
@@ -74,7 +138,60 @@ function renderSummary(year, month, expenses) {
   }
 }
 
-async function loadMonth(user) {
+function renderList(expenses) {
+  if (listEl) listEl.innerHTML = "";
+  if (emptyEl) emptyEl.classList.add("hidden");
+  if (clearFiltersBtn) clearFiltersBtn.disabled = !filtersActive();
+  if (listHeading) {
+    listHeading.textContent = filtersActive() ? "Filtered expenses" : "All expenses";
+  }
+
+  if (expenses.length === 0) {
+    if (emptyEl) {
+      emptyEl.textContent = filtersActive()
+        ? "No expenses match these filters."
+        : "No expenses for this month.";
+      emptyEl.classList.remove("hidden");
+    }
+    return;
+  }
+
+  for (const expense of expenses) {
+    const date = toExpenseDate(expense.spentAt);
+    if (!date) continue;
+    const li = document.createElement("li");
+    li.className = "expense-item";
+    li.innerHTML = `
+      <div class="expense-item__main">
+        <span class="expense-item__category">${escapeHtml(expense.category)}</span>
+        <span class="expense-item__amount">${formatMoney(expense.amount, expense.currency)}</span>
+      </div>
+      <div class="expense-item__meta">
+        <time datetime="${date.toISOString()}">${date.toLocaleDateString()}</time>
+        <span class="expense-item__added-by">Added by ${escapeHtml(addedByLabel(expense, usernameByUid))}</span>
+        ${expense.note ? `<span>${escapeHtml(expense.note)}</span>` : ""}
+      </div>
+    `;
+    listEl?.appendChild(li);
+  }
+}
+
+function applyFilters() {
+  if (!monthInput?.value) return;
+  const [year, month] = monthInput.value.split("-").map(Number);
+  if (!year || !month) return;
+  const visible = filteredExpenses();
+  renderSummary(year, month, visible);
+  renderList(visible);
+}
+
+function clearFilters() {
+  if (userFilter) userFilter.value = "";
+  if (categoryFilter) categoryFilter.value = "";
+  applyFilters();
+}
+
+async function loadMonth() {
   if (errorEl) errorEl.classList.add("hidden");
   if (emptyEl) emptyEl.classList.add("hidden");
   if (listEl) listEl.innerHTML = "";
@@ -96,37 +213,19 @@ async function loadMonth(user) {
   }
 
   try {
-    const [expenses, usernameByUid] = await Promise.all([
+    const [expenses, names] = await Promise.all([
       getExpensesForMonth(year, month),
       getUsernameMap().catch(() => new Map()),
     ]);
-    renderSummary(year, month, expenses);
-
-    if (expenses.length === 0) {
-      if (emptyEl) emptyEl.classList.remove("hidden");
-      return;
-    }
-
-    for (const expense of expenses) {
-      const date = toExpenseDate(expense.spentAt);
-      if (!date) continue;
-      const li = document.createElement("li");
-      li.className = "expense-item";
-      li.innerHTML = `
-        <div class="expense-item__main">
-          <span class="expense-item__category">${escapeHtml(expense.category)}</span>
-          <span class="expense-item__amount">${formatMoney(expense.amount, expense.currency)}</span>
-        </div>
-        <div class="expense-item__meta">
-          <time datetime="${date.toISOString()}">${date.toLocaleDateString()}</time>
-          <span class="expense-item__added-by">Added by ${escapeHtml(addedByLabel(expense, usernameByUid))}</span>
-          ${expense.note ? `<span>${escapeHtml(expense.note)}</span>` : ""}
-        </div>
-      `;
-      listEl?.appendChild(li);
-    }
+    monthExpenses = expenses;
+    usernameByUid = names;
+    if (userFilter) userFilter.value = "";
+    if (categoryFilter) categoryFilter.value = "";
+    populateFilters(expenses);
+    applyFilters();
   } catch (err) {
     console.error(err);
+    monthExpenses = [];
     if (summaryTotal) summaryTotal.textContent = "—";
     if (summaryMeta) summaryMeta.textContent = "";
     if (!navigator.onLine) {
@@ -139,7 +238,7 @@ async function loadMonth(user) {
 
 async function init() {
   if (!monthInput) {
-    showError("This page failed to load. Hard refresh or clear site cache.");
+    showError("This page failed to load. Hard refresh or clear site data.");
     return;
   }
 
@@ -147,10 +246,10 @@ async function init() {
     monthInput.value = currentMonthValue();
   }
 
-  let user;
   try {
     if (summaryMeta) summaryMeta.textContent = "Checking sign-in…";
-    user = await requireAuth();
+    const user = await requireAuth();
+    if (!user) return;
   } catch (err) {
     console.error(err);
     showError(err.message || "Sign-in check failed.");
@@ -158,13 +257,14 @@ async function init() {
     return;
   }
 
-  if (!user) return;
-
-  await loadMonth(user);
-
+  userFilter?.addEventListener("change", applyFilters);
+  categoryFilter?.addEventListener("change", applyFilters);
+  clearFiltersBtn?.addEventListener("click", clearFilters);
   monthInput.addEventListener("change", () => {
-    loadMonth(user);
+    loadMonth();
   });
+
+  await loadMonth();
 }
 
 init();
