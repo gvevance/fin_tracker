@@ -1,12 +1,10 @@
 import {
   collection,
-  addDoc,
   doc,
   setDoc,
   getDoc,
   getDocs,
-  updateDoc,
-  deleteDoc,
+  writeBatch,
   Timestamp,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
@@ -14,6 +12,7 @@ import { db } from "./firebase.js";
 
 const EXPENSES = "expenses";
 const CATEGORIES = "categories";
+const HISTORY = "history";
 
 export const DEFAULT_CATEGORIES = [
   "Food",
@@ -119,32 +118,81 @@ export function expenseInCalendarMonth(spentAt, year, month) {
   return date.getFullYear() === year && date.getMonth() + 1 === month;
 }
 
+function requireActor(actor) {
+  const username = String(actor || "").trim().toLowerCase();
+  if (!username) {
+    throw new Error("Could not record who made this change. Sign in again.");
+  }
+  return username;
+}
+
+function toTimestamp(value) {
+  if (!value) return null;
+  if (typeof value.toDate === "function") return value;
+  if (value instanceof Date) return Timestamp.fromDate(value);
+  const date = toExpenseDate(value);
+  return date ? Timestamp.fromDate(date) : null;
+}
+
+function historyPayload(type, actor, expense, extra = {}) {
+  return {
+    type,
+    actor,
+    expenseId: expense.id || "",
+    amount: expense.amount,
+    currency: expense.currency || "INR",
+    category: expense.category || "Other",
+    note: expense.note || "",
+    spentAt: toTimestamp(expense.spentAt),
+    addedBy: String(expense.addedBy || "").trim().toLowerCase(),
+    monthKey: expense.monthKey || "",
+    createdAt: serverTimestamp(),
+    ...extra,
+  };
+}
+
 export async function addExpense(userId, { amount, currency, category, note, spentAt, addedBy }) {
   const spentDate = spentAt instanceof Date ? spentAt : parseDateInputValue(spentAt);
   if (Number.isNaN(spentDate.getTime())) {
     throw new Error("Invalid expense date.");
   }
 
-  const username = String(addedBy || "").trim().toLowerCase();
-  if (!username) {
-    throw new Error("Could not record who added this expense. Sign in again.");
-  }
+  const username = requireActor(addedBy);
+  const spentAtTs = Timestamp.fromDate(spentDate);
+  const monthKey = monthKeyFromDate(spentDate);
+  const expenseRef = doc(collection(db, EXPENSES));
+  const historyRef = doc(collection(db, HISTORY));
+  const batch = writeBatch(db);
 
-  const saved = await addDoc(collection(db, EXPENSES), {
+  batch.set(expenseRef, {
     userId,
     addedBy: username,
     amount,
     currency,
     category,
     note: note || "",
-    spentAt: Timestamp.fromDate(spentDate),
-    monthKey: monthKeyFromDate(spentDate),
+    spentAt: spentAtTs,
+    monthKey,
     createdAt: serverTimestamp(),
   });
+  batch.set(
+    historyRef,
+    historyPayload("added", username, {
+      id: expenseRef.id,
+      amount,
+      currency,
+      category,
+      note: note || "",
+      spentAt: spentAtTs,
+      addedBy: username,
+      monthKey,
+    })
+  );
+  await batch.commit();
   await rememberCategory(category).catch((err) => {
     console.error("Could not save category:", err);
   });
-  return saved;
+  return expenseRef;
 }
 
 export async function getExpense(expenseId) {
@@ -159,36 +207,81 @@ export async function getExpense(expenseId) {
   return { id: snap.id, ...snap.data() };
 }
 
-export async function updateExpense(expenseId, { amount, currency, category, note, spentAt }) {
+export async function updateExpense(expenseId, { amount, currency, category, note, spentAt, actor }) {
   const id = String(expenseId || "").trim();
   if (!id) {
     throw new Error("Missing expense.");
   }
 
+  const username = requireActor(actor);
   const spentDate = spentAt instanceof Date ? spentAt : parseDateInputValue(spentAt);
   if (Number.isNaN(spentDate.getTime())) {
     throw new Error("Invalid expense date.");
   }
 
-  await updateDoc(doc(db, EXPENSES, id), {
+  const previous = await getExpense(id);
+  const spentAtTs = Timestamp.fromDate(spentDate);
+  const monthKey = monthKeyFromDate(spentDate);
+  const expenseRef = doc(db, EXPENSES, id);
+  const historyRef = doc(collection(db, HISTORY));
+  const batch = writeBatch(db);
+
+  batch.update(expenseRef, {
     amount,
     currency,
     category,
     note: note || "",
-    spentAt: Timestamp.fromDate(spentDate),
-    monthKey: monthKeyFromDate(spentDate),
+    spentAt: spentAtTs,
+    monthKey,
   });
+  batch.set(
+    historyRef,
+    historyPayload(
+      "modified",
+      username,
+      {
+        id,
+        amount,
+        currency,
+        category,
+        note: note || "",
+        spentAt: spentAtTs,
+        addedBy: previous.addedBy,
+        monthKey,
+      },
+      {
+        previousAmount: previous.amount ?? null,
+        previousCategory: previous.category || "",
+        previousNote: previous.note || "",
+        previousSpentAt: toTimestamp(previous.spentAt),
+      }
+    )
+  );
+  await batch.commit();
   await rememberCategory(category).catch((err) => {
     console.error("Could not save category:", err);
   });
 }
 
-export async function deleteExpense(expenseId) {
+export async function deleteExpense(expenseId, { actor } = {}) {
   const id = String(expenseId || "").trim();
   if (!id) {
     throw new Error("Missing expense.");
   }
-  await deleteDoc(doc(db, EXPENSES, id));
+
+  const username = requireActor(actor);
+  const expense = await getExpense(id);
+  const historyRef = doc(collection(db, HISTORY));
+  const batch = writeBatch(db);
+  batch.set(
+    historyRef,
+    historyPayload("deleted", username, {
+      ...expense,
+      id,
+    })
+  );
+  batch.delete(doc(db, EXPENSES, id));
+  await batch.commit();
 }
 
 export async function getUsernameMap() {
@@ -232,6 +325,25 @@ export async function getExpensesForMonth(year, month) {
       const db_ = toExpenseDate(b.spentAt)?.getTime() ?? 0;
       return db_ - da;
     });
+}
+
+function historyTime(value) {
+  if (!value) return 0;
+  if (typeof value.toMillis === "function") return value.toMillis();
+  if (typeof value.seconds === "number") return value.seconds * 1000;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+}
+
+/** Shared activity log: every signed-in user sees adds, edits, and deletes. */
+export async function getHistory() {
+  const snapshot = await getDocs(collection(db, HISTORY));
+  return snapshot.docs
+    .map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
+    }))
+    .sort((a, b) => historyTime(b.createdAt) - historyTime(a.createdAt));
 }
 
 export function formatMoney(amount, currency = "INR") {

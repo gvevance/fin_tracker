@@ -173,6 +173,7 @@ form?.addEventListener("submit", async (e) => {
           category,
           note: data.get("note") || "",
           spentAt,
+          actor: usernameFromUser(user),
         });
         window.location.assign(monthlyHref());
         return;

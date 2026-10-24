@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a1a2e" />
+    <meta name="description" content="History — Financial Tracker" />
+    <title>History — Financial Tracker</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header class="top-bar">
+      <a class="top-bar__back" href="home.html">← Home</a>
+      <span class="top-bar__title">History</span>
+    </header>
+    <main class="page">
+      <nav class="tabs" aria-label="Expense views">
+        <a class="tab" href="monthly-expenses.html">Expenses</a>
+        <a class="tab active" href="history.html" aria-current="page">History</a>
+      </nav>
+
+      <p id="history-status" class="muted">Loading history…</p>
+      <p id="history-error" class="error hidden" role="alert"></p>
+      <ul id="history-list" class="expense-list"></ul>
+    </main>
+    <script src="js/main.js" type="module"></script>
+    <script type="module" src="js/pages/history.js"></script>
+  </body>
+</html>

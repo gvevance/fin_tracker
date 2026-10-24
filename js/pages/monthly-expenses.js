@@ -1,5 +1,5 @@
 import { requireAuth } from "../auth-guard.js";
-import { isAdminUser, appPageHref, rememberEditExpense } from "../auth.js";
+import { isAdminUser, appPageHref, rememberEditExpense, usernameFromUser } from "../auth.js";
 import {
   getExpensesForMonth,
   getUsernameMap,
@@ -264,7 +264,7 @@ async function confirmDelete() {
   }
   try {
     const id = pendingDeleteId;
-    await deleteExpense(id);
+    await deleteExpense(id, { actor: usernameFromUser(currentUser) });
     monthExpenses = monthExpenses.filter((expense) => expense.id !== id);
     pendingDeleteId = "";
     deleting = false;

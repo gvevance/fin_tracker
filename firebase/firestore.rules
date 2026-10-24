@@ -39,5 +39,19 @@ service cloud.firestore {
         && request.resource.data.addedBy == resource.data.addedBy;
       allow delete: if isAdmin();
     }
+
+    match /history/{entryId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.actor is string
+        && request.resource.data.actor.size() >= 3
+        && request.resource.data.type in ["added", "modified", "deleted"]
+        && request.auth.token.email == request.resource.data.actor + "@users.fintracker.local"
+        && (
+          request.resource.data.type == "added"
+          || isAdmin()
+        );
+      allow update, delete: if false;
+    }
   }
 }
