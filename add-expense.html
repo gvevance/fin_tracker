@@ -9,6 +9,11 @@
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="css/styles.css" />
+    <style>
+      #expense-form:not(.is-ready) {
+        display: none !important;
+      }
+    </style>
   </head>
   <body>
     <header class="top-bar">
@@ -16,7 +21,9 @@
       <span class="top-bar__title">Add expense</span>
     </header>
     <main class="page">
-      <form id="expense-form" class="card stack" novalidate>
+      <p id="page-loading" class="muted">Loading…</p>
+      <p id="page-load-error" class="error hidden" role="alert"></p>
+      <form id="expense-form" class="card stack hidden" novalidate>
         <label class="field">
           <span>Amount</span>
           <input

@@ -45,6 +45,10 @@ export function usernameFromUser(user) {
   }
 }
 
+export function isAdminUser(user) {
+  return usernameFromUser(user).toLowerCase() === "admin";
+}
+
 export async function rememberUsername(user) {
   const username = usernameFromUser(user);
   if (!user?.uid || !username) return;
@@ -83,7 +87,44 @@ export function loginHref() {
 }
 
 export function homeHref() {
-  return new URL("home.html", window.location.href).href;
+  return appPageHref("home.html");
+}
+
+/** Keep query strings on both pretty `/add-expense` and `/add-expense.html` URLs. */
+export function appPageHref(fileName, params = {}) {
+  const pretty = !/\.html$/i.test(window.location.pathname);
+  const path = pretty ? String(fileName).replace(/\.html$/i, "") : fileName;
+  const url = new URL(path, window.location.href);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      url.searchParams.set(key, String(value));
+    }
+  });
+  return url.href;
+}
+
+const EDIT_EXPENSE_KEY = "ft.editExpenseId";
+
+export function rememberEditExpense(expenseId) {
+  const id = String(expenseId || "").trim();
+  if (!id) return;
+  try {
+    sessionStorage.setItem(EDIT_EXPENSE_KEY, id);
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+export function takeEditExpenseId() {
+  const fromQuery = new URLSearchParams(window.location.search).get("edit") || "";
+  let fromStore = "";
+  try {
+    fromStore = sessionStorage.getItem(EDIT_EXPENSE_KEY) || "";
+    sessionStorage.removeItem(EDIT_EXPENSE_KEY);
+  } catch {
+    fromStore = "";
+  }
+  return String(fromQuery || fromStore).trim();
 }
 
 export async function signOutToLogin() {
@@ -113,25 +154,7 @@ export function getCurrentUser() {
 /** Wait for Firebase to restore persisted sign-in (avoids false logouts on navigation). */
 export async function waitForAuth() {
   await auth.authStateReady();
-  if (auth.currentUser) {
-    return auth.currentUser;
-  }
-
-  return new Promise((resolve) => {
-    const timeoutMs = 8000;
-    const timeout = setTimeout(() => {
-      unsubscribe();
-      resolve(auth.currentUser);
-    }, timeoutMs);
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        clearTimeout(timeout);
-        unsubscribe();
-        resolve(user);
-      }
-    });
-  });
+  return auth.currentUser;
 }
 
 /** Resolves once Firebase reports no signed-in user. */

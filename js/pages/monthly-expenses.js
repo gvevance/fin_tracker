@@ -1,10 +1,13 @@
 import { requireAuth } from "../auth-guard.js";
+import { isAdminUser, appPageHref, rememberEditExpense } from "../auth.js";
 import {
   getExpensesForMonth,
   getUsernameMap,
+  getKnownCategories,
   addedByLabel,
   formatMoney,
   toExpenseDate,
+  deleteExpense,
 } from "../expenses.js";
 
 const monthInput =
@@ -21,9 +24,17 @@ const userFilter = document.getElementById("filter-user");
 const categoryFilter = document.getElementById("filter-category");
 const clearFiltersBtn = document.getElementById("clear-filters-btn");
 const listHeading = document.getElementById("list-heading");
+const deleteModal = document.getElementById("delete-modal");
+const deleteModalTitle = document.getElementById("delete-modal-title");
+const deleteCancelBtn = document.getElementById("delete-cancel");
+const deleteConfirmBtn = document.getElementById("delete-confirm");
 
+let currentUser = null;
 let monthExpenses = [];
 let usernameByUid = new Map();
+let householdCategories = [];
+let pendingDeleteId = "";
+let deleting = false;
 
 function showError(message) {
   if (errorEl) {
@@ -87,8 +98,9 @@ function populateFilters(expenses) {
   const people = [
     ...new Set(expenses.map((expense) => addedByLabel(expense, usernameByUid))),
   ].sort((a, b) => a.localeCompare(b));
+  const fromMonth = expenses.map((expense) => expense.category || "Other");
   const categories = [
-    ...new Set(expenses.map((expense) => expense.category || "Other")),
+    ...new Set([...householdCategories, ...fromMonth]),
   ].sort((a, b) => a.localeCompare(b));
   fillSelect(userFilter, people, "All people");
   fillSelect(categoryFilter, categories, "All categories");
@@ -156,11 +168,16 @@ function renderList(expenses) {
     return;
   }
 
+  const admin = isAdminUser(currentUser);
+
   for (const expense of expenses) {
     const date = toExpenseDate(expense.spentAt);
     if (!date) continue;
     const li = document.createElement("li");
     li.className = "expense-item";
+    li.tabIndex = 0;
+    li.dataset.expenseId = expense.id;
+    li.setAttribute("aria-expanded", "false");
     li.innerHTML = `
       <div class="expense-item__main">
         <span class="expense-item__category">${escapeHtml(expense.category)}</span>
@@ -171,8 +188,108 @@ function renderList(expenses) {
         <span class="expense-item__added-by">Added by ${escapeHtml(addedByLabel(expense, usernameByUid))}</span>
         ${expense.note ? `<span>${escapeHtml(expense.note)}</span>` : ""}
       </div>
+      <div class="expense-item__actions">
+        <div class="expense-item__actions-inner">
+          <div class="expense-actions">
+            <button type="button" class="btn btn--small btn--ghost expense-modify"${admin ? "" : " disabled"} title="${admin ? "Modify this expense" : "Only admin can modify expenses"}">Modify</button>
+            <button type="button" class="btn btn--small expense-delete"${admin ? "" : " disabled"} title="${admin ? "Delete this expense" : "Only admin can delete expenses"}">Delete</button>
+          </div>
+        </div>
+      </div>
     `;
+
+    li.addEventListener("click", (event) => {
+      if (event.target.closest(".expense-actions")) return;
+      toggleExpenseItem(li);
+    });
+    li.addEventListener("keydown", (event) => {
+      if (event.target !== li) return;
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggleExpenseItem(li);
+      }
+    });
+
+    const modifyBtn = li.querySelector(".expense-modify");
+    const deleteBtn = li.querySelector(".expense-delete");
+    modifyBtn?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (!admin) return;
+      rememberEditExpense(expense.id);
+      window.location.href = appPageHref("add-expense.html", { edit: expense.id });
+    });
+    deleteBtn?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (!admin) return;
+      openDeleteModal(expense);
+    });
+
     listEl?.appendChild(li);
+  }
+}
+
+function toggleExpenseItem(li) {
+  const willOpen = !li.classList.contains("is-open");
+  listEl?.querySelectorAll(".expense-item.is-open").forEach((item) => {
+    item.classList.remove("is-open");
+    item.setAttribute("aria-expanded", "false");
+  });
+  li.classList.toggle("is-open", willOpen);
+  li.setAttribute("aria-expanded", willOpen ? "true" : "false");
+}
+
+function openDeleteModal(expense) {
+  pendingDeleteId = expense.id;
+  const label = `${expense.category || "Expense"} ${formatMoney(expense.amount, expense.currency)}`;
+  if (deleteModalTitle) {
+    deleteModalTitle.textContent = `Delete ${label}? This cannot be undone.`;
+  }
+  deleteModal?.classList.remove("hidden");
+  deleteConfirmBtn?.focus();
+}
+
+function closeDeleteModal() {
+  if (deleting) return;
+  pendingDeleteId = "";
+  deleteModal?.classList.add("hidden");
+}
+
+async function confirmDelete() {
+  if (!pendingDeleteId || deleting || !isAdminUser(currentUser)) return;
+  deleting = true;
+  if (deleteConfirmBtn) {
+    deleteConfirmBtn.disabled = true;
+    deleteConfirmBtn.classList.add("is-busy");
+    deleteConfirmBtn.textContent = "Deleting…";
+  }
+  try {
+    const id = pendingDeleteId;
+    await deleteExpense(id);
+    monthExpenses = monthExpenses.filter((expense) => expense.id !== id);
+    pendingDeleteId = "";
+    deleting = false;
+    if (deleteConfirmBtn) {
+      deleteConfirmBtn.disabled = false;
+      deleteConfirmBtn.classList.remove("is-busy");
+      deleteConfirmBtn.textContent = "Delete";
+    }
+    deleteModal?.classList.add("hidden");
+    populateFilters(monthExpenses);
+    applyFilters();
+  } catch (err) {
+    console.error(err);
+    deleting = false;
+    if (deleteConfirmBtn) {
+      deleteConfirmBtn.disabled = false;
+      deleteConfirmBtn.classList.remove("is-busy");
+      deleteConfirmBtn.textContent = "Delete";
+    }
+    closeDeleteModal();
+    if (!navigator.onLine) {
+      showError("You are offline. Connect to delete expenses.");
+    } else {
+      showError(err.message || "Could not delete expense.");
+    }
   }
 }
 
@@ -213,10 +330,12 @@ async function loadMonth() {
   }
 
   try {
-    const [expenses, names] = await Promise.all([
+    const [expenses, names, categories] = await Promise.all([
       getExpensesForMonth(year, month),
       getUsernameMap().catch(() => new Map()),
+      getKnownCategories().catch(() => []),
     ]);
+    householdCategories = categories;
     monthExpenses = expenses;
     usernameByUid = names;
     if (userFilter) userFilter.value = "";
@@ -248,8 +367,8 @@ async function init() {
 
   try {
     if (summaryMeta) summaryMeta.textContent = "Checking sign-in…";
-    const user = await requireAuth();
-    if (!user) return;
+    currentUser = await requireAuth();
+    if (!currentUser) return;
   } catch (err) {
     console.error(err);
     showError(err.message || "Sign-in check failed.");
@@ -262,6 +381,16 @@ async function init() {
   clearFiltersBtn?.addEventListener("click", clearFilters);
   monthInput.addEventListener("change", () => {
     loadMonth();
+  });
+  deleteCancelBtn?.addEventListener("click", closeDeleteModal);
+  deleteConfirmBtn?.addEventListener("click", confirmDelete);
+  deleteModal?.addEventListener("click", (event) => {
+    if (event.target === deleteModal) closeDeleteModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !deleteModal?.classList.contains("hidden")) {
+      closeDeleteModal();
+    }
   });
 
   await loadMonth();

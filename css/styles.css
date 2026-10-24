@@ -74,6 +74,11 @@ body {
 }
 
 .btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn.is-busy:disabled {
   opacity: 0.7;
   cursor: wait;
 }
@@ -207,12 +212,9 @@ body {
 }
 
 .combobox__list {
-  position: absolute;
+  position: static;
   z-index: 5;
-  left: 0;
-  right: 0;
-  top: calc(100% + 4px);
-  margin: 0;
+  margin: 4px 0 0;
   padding: 0.25rem 0;
   list-style: none;
   max-height: 12rem;
@@ -352,6 +354,18 @@ body {
   border: 1px solid #2a2a4a;
   border-radius: 0.5rem;
   padding: 0.85rem 1rem;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.expense-item.is-open {
+  border-color: #e94560;
+}
+
+.expense-item:focus-visible {
+  outline: 2px solid #e94560;
+  outline-offset: 2px;
 }
 
 .expense-item__main {
@@ -372,4 +386,79 @@ body {
 
 .expense-item__added-by {
   color: #c8c8dc;
+}
+
+.expense-item__actions {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+
+.expense-item.is-open .expense-item__actions {
+  grid-template-rows: 1fr;
+}
+
+.expense-item__actions-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.expense-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 0.85rem;
+}
+
+.expense-actions .btn {
+  flex: 1;
+}
+
+.expense-actions .btn:disabled,
+.expense-actions .btn:disabled:hover {
+  background-color: #2a2a44;
+  border-color: #3a3a55;
+  color: #8a8aa0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .expense-item__actions {
+    transition: none;
+  }
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(10, 10, 24, 0.72);
+}
+
+.modal__card {
+  width: 100%;
+  max-width: 22rem;
+  background-color: #16213e;
+  border: 1px solid #2a2a4a;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+}
+
+.modal__card p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.modal__actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.15rem;
+}
+
+.modal__actions .btn {
+  flex: 1;
 }

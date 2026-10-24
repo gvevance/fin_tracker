@@ -2,12 +2,25 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == "admin@users.fintracker.local";
+    }
+
     match /userProfiles/{uid} {
       allow read: if request.auth != null;
       allow create, update: if request.auth != null
         && request.auth.uid == uid
         && request.resource.data.username is string
         && request.resource.data.username.size() >= 3;
+      allow delete: if false;
+    }
+
+    match /categories/{categoryId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1;
       allow delete: if false;
     }
 
@@ -20,10 +33,11 @@ service cloud.firestore {
         && request.resource.data.addedBy is string
         && request.resource.data.addedBy.size() >= 3;
 
-      // Edit/delete stays with the person who added it for now.
-      // Admin edit/delete is a separate upcoming change.
-      allow update, delete: if request.auth != null
-        && resource.data.userId == request.auth.uid;
+      // Only the household admin account can change or remove expenses.
+      allow update: if isAdmin()
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.addedBy == resource.data.addedBy;
+      allow delete: if isAdmin();
     }
   }
 }

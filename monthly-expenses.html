@@ -65,6 +65,15 @@
       <p id="list-empty" class="muted hidden">No expenses for this month.</p>
       <ul id="expense-list" class="expense-list"></ul>
     </main>
+    <div id="delete-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+      <div class="modal__card">
+        <p id="delete-modal-title">Delete this expense? This cannot be undone.</p>
+        <div class="modal__actions">
+          <button type="button" id="delete-cancel" class="btn btn--ghost">Cancel</button>
+          <button type="button" id="delete-confirm" class="btn">Delete</button>
+        </div>
+      </div>
+    </div>
     <script src="js/main.js" type="module"></script>
     <script type="module" src="js/pages/monthly-expenses.js"></script>
   </body>
